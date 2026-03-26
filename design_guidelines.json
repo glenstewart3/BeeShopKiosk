@@ -1,0 +1,73 @@
+{
+  "project": "MPS Bee Shop Kiosk",
+  "theme_archetype": "Archetype 6: Vibrant Play (Light Theme) tuned for iPad touch usability",
+  "color_palette": {
+    "brand_navy": "#19305a",
+    "accent_sky": "#7cbde8",
+    "honey_yellow": "#f5a623",
+    "danger_red": "#c74747",
+    "bg_white": "#ffffff",
+    "muted_blue": "#f3f6fb",
+    "text_main": "#19305a",
+    "text_muted": "#5a6b8a"
+  },
+  "typography": {
+    "font_family": "ui-rounded, 'Nunito', 'SF Pro Rounded', system-ui, sans-serif",
+    "h1": "text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-[#19305a]",
+    "h2": "text-2xl md:text-3xl font-bold tracking-tight text-[#19305a]",
+    "body": "text-lg md:text-xl font-medium text-[#19305a]",
+    "labels": "text-sm font-bold uppercase tracking-[0.15em] text-[#7cbde8]"
+  },
+  "layout_spacing": {
+    "touch_targets": "min-h-[64px] min-w-[64px] (iPad standard is 44px, we go larger for kids' ease of use)",
+    "container_padding": "p-8 md:p-12",
+    "bento_grid": "grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8",
+    "card_radius": "rounded-[16px]",
+    "card_shadow": "shadow-[0_8px_30px_rgba(25,48,90,0.06)] hover:shadow-[0_20px_40px_rgba(25,48,90,0.12)]"
+  },
+  "components": {
+    "cards": {
+      "base": "bg-[#ffffff] rounded-[16px] shadow-[0_8px_30px_rgba(25,48,90,0.06)] p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 border-2 border-transparent",
+      "hover_active": "transform -translate-y-2 border-[#7cbde8] shadow-[0_20px_40px_rgba(25,48,90,0.12)]"
+    },
+    "numpad": {
+      "container": "grid grid-cols-3 gap-4 max-w-md mx-auto",
+      "button": "h-20 text-3xl font-black rounded-[16px] bg-[#ffffff] text-[#19305a] border-b-4 border-[#19305a]/10 hover:bg-[#7cbde8] hover:text-white hover:border-[#7cbde8] active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center shadow-sm"
+    },
+    "buttons": {
+      "primary": "bg-[#f5a623] text-[#19305a] font-bold text-xl py-4 px-8 rounded-[16px] shadow-[0_8px_0_rgba(200,130,20,1)] hover:brightness-105 active:translate-y-2 active:shadow-none transition-all",
+      "secondary": "bg-[#19305a] text-white font-bold text-xl py-4 px-8 rounded-[16px] shadow-[0_8px_0_rgba(15,30,60,1)] hover:bg-[#254680] active:translate-y-2 active:shadow-none transition-all",
+      "danger": "bg-[#c74747] text-white font-bold text-xl py-4 px-8 rounded-[16px] shadow-[0_8px_0_rgba(150,50,50,1)] hover:bg-[#e05252] active:translate-y-2 active:shadow-none transition-all"
+    },
+    "modals": {
+      "overlay": "backdrop-blur-xl bg-[#19305a]/40",
+      "content": "bg-[#ffffff] rounded-[24px] shadow-2xl p-8 max-w-2xl w-full border-4 border-[#19305a]"
+    },
+    "navigation": {
+      "stepper": "flex items-center gap-4 text-[#19305a] font-bold text-lg mb-8",
+      "active_step": "bg-[#7cbde8] text-[#19305a] px-6 py-2 rounded-full"
+    }
+  },
+  "interactions_and_motion": {
+    "transitions": "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+    "success_state": "Trigger scale-up animation with spring physics. Use bee emoji 🐝 prominently but sparingly in success alerts.",
+    "hover": "Elevate elements with soft bounces for tactile kids' interaction."
+  },
+  "icons_and_assets": {
+    "library": "lucide-react",
+    "styling": "stroke-[3px] text-[#19305a] or #7cbde8",
+    "emojis": "🐝 (Success/System messages), 🍯 (Bank/Savings), 🛒 (Cart/Checkout)"
+  },
+  "testing": {
+    "requirements": "ALL interactive elements (buttons, inputs, grids) MUST have descriptive data-testid attributes (e.g., 'class-card-math', 'numpad-btn-5', 'confirm-transaction-btn')."
+  },
+  "instructions_to_main_agent": [
+    "This is a hybrid iPad Kiosk application. DO NOT use tiny web-standard buttons. Everything must be chunky, tactile, and easily tappable by small hands or standing adults.",
+    "Apply 'bg-[#f3f6fb]' to the root application background and use 'bg-[#ffffff]' exclusively for surface elements (cards, containers, modals) to create depth without relying on heavy shadows.",
+    "Implement the Numpad with chunky physical-feeling buttons (refer to components.numpad and components.buttons for exact box-shadow bottom-border tactile states).",
+    "Do not use generic Shadcn borders. Override Shadcn Card/Dialog components with the 16px border-radius and the specified color variables.",
+    "For the Splash Screen, feature an SVG/text logo for 'MPS' heavily utilizing the #19305a (Navy) and #f5a623 (Honey Yellow) contrast.",
+    "Analytics/Dashboard should utilize the Recharts library, applying #19305a, #7cbde8, and #f5a623 to graphs and bar charts.",
+    "Ensure the shopping cart overlay completely halts underlying interaction using the heavy backdrop-blur overlay."
+  ]
+}
