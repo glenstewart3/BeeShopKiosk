@@ -157,6 +157,15 @@ async def get_active_session():
     doc = await db.sessions.find_one({"active": True}, {"_id": 0})
     return doc
 
+@api_router.delete("/sessions/{label}")
+async def delete_session(label: str):
+    result = await db.sessions.delete_one({"label": label})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Session not found")
+    await db.transactions.delete_many({"session_label": label})
+    await db.students.update_many({"skipped_session": label}, {"$unset": {"skipped_session": ""}})
+    return {"status": "ok"}
+
 # ── Transactions ──
 
 @api_router.post("/transactions")

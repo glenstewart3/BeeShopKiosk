@@ -145,6 +145,16 @@ function AdminPanel() {
     } catch (e) { toast.error("Failed"); }
   };
 
+  const deleteSession = async (label) => {
+    if (!window.confirm(`Delete session "${label}" and all its transactions? This cannot be undone.`)) return;
+    try {
+      await axios.delete(`${API}/sessions/${encodeURIComponent(label)}`);
+      toast.success("Session deleted");
+      loadAll();
+      loadReport();
+    } catch (e) { toast.error("Failed to delete session"); }
+  };
+
   const addItem = async () => {
     if (!newItem.name.trim() || !newItem.cost) { toast.error("Name and cost required"); return; }
     try {
@@ -524,14 +534,20 @@ function AdminPanel() {
                     <span className="font-bold text-[#19305a]">{s.label}</span>
                     <span className="text-sm text-[#5a6b8a] ml-2">{s.date}</span>
                   </div>
-                  {s.active ? (
-                    <span className="text-xs font-bold text-[#f5a623] bg-[#f5a623]/10 px-3 py-1 rounded-full">Active</span>
-                  ) : (
-                    <button data-testid={`admin-activate-session-${s.label.replace(/\s/g, '-')}`} onClick={() => switchSession(s.label)}
-                      className="text-xs font-bold text-[#7cbde8] bg-[#7cbde8]/10 px-3 py-1 rounded-full hover:bg-[#7cbde8]/20 transition-all">
-                      Activate
+                  <div className="flex items-center gap-2">
+                    {s.active ? (
+                      <span className="text-xs font-bold text-[#f5a623] bg-[#f5a623]/10 px-3 py-1 rounded-full">Active</span>
+                    ) : (
+                      <button data-testid={`admin-activate-session-${s.label.replace(/\s/g, '-')}`} onClick={() => switchSession(s.label)}
+                        className="text-xs font-bold text-[#7cbde8] bg-[#7cbde8]/10 px-3 py-1 rounded-full hover:bg-[#7cbde8]/20 transition-all">
+                        Activate
+                      </button>
+                    )}
+                    <button data-testid={`admin-delete-session-${s.label.replace(/\s/g, '-')}`} onClick={() => deleteSession(s.label)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-[#c74747] hover:bg-[#c74747]/10 transition-all">
+                      <Trash2 size={14} strokeWidth={3} />
                     </button>
-                  )}
+                  </div>
                 </div>
               ))}
               {sessions.length === 0 && <p className="text-center text-[#5a6b8a] mt-8">No sessions yet. Create one above.</p>}
