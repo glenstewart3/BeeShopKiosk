@@ -1,23 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
 import "@/App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import axios from "axios";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import SplashScreen from "@/components/SplashScreen";
 import Header from "@/components/Header";
 import ShopView from "@/components/ShopView";
-import Dashboard from "@/components/Dashboard";
-import SettingsPanel from "@/components/SettingsPanel";
+import AdminPage from "@/components/AdminPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-function App() {
+function KioskApp() {
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("shop");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [students, setStudents] = useState({});
   const [items, setItems] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [usedPairs, setUsedPairs] = useState([]);
   const [error, setError] = useState(null);
@@ -25,15 +22,13 @@ function App() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [studRes, itemRes, sessRes, activeRes] = await Promise.all([
+      const [studRes, itemRes, activeRes] = await Promise.all([
         axios.get(`${API}/students`),
         axios.get(`${API}/items`),
-        axios.get(`${API}/sessions`),
         axios.get(`${API}/sessions/active`),
       ]);
       setStudents(studRes.data);
       setItems(itemRes.data);
-      setSessions(sessRes.data);
       setActiveSession(activeRes.data);
 
       if (activeRes.data) {
@@ -50,9 +45,7 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const saveTransaction = async (txn) => {
     const res = await axios.post(`${API}/transactions`, txn);
@@ -78,44 +71,31 @@ function App() {
         </div>
       )}
 
-      <Header
-        view={view}
-        setView={setView}
-        onSettings={() => setSettingsOpen(true)}
-        activeSession={activeSession}
-      />
+      <Header activeSession={activeSession} />
 
       <main className="flex-1 overflow-hidden">
-        {view === "shop" ? (
-          <ShopView
-            students={students}
-            items={items}
-            activeSession={activeSession}
-            usedPairs={usedPairs}
-            onSave={saveTransaction}
-            onSkip={skipStudent}
-            api={API}
-          />
-        ) : (
-          <Dashboard
-            sessions={sessions}
-            activeSession={activeSession}
-            api={API}
-            onRefresh={loadData}
-          />
-        )}
+        <ShopView
+          students={students}
+          items={items}
+          activeSession={activeSession}
+          usedPairs={usedPairs}
+          onSave={saveTransaction}
+          onSkip={skipStudent}
+          api={API}
+        />
       </main>
-
-      <SettingsPanel
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        items={items}
-        sessions={sessions}
-        activeSession={activeSession}
-        api={API}
-        onRefresh={loadData}
-      />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="*" element={<KioskApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
