@@ -97,6 +97,11 @@ body {
   border-radius: 3px;
 }
 
+/* Hide external badge */
+#emergent-badge {
+  display: none !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
