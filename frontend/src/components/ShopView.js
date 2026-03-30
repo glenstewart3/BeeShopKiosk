@@ -236,8 +236,8 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
 
         {/* Step 3 - Tokens Numpad */}
         {step === 3 && (
-          <div className="flex-1 flex flex-col items-center justify-center p-3 animate-fade-in" data-testid="step-tokens">
-            <div className="flex items-center gap-2 mb-1 self-start">
+          <div className="flex-1 flex flex-col items-center p-3 pt-4 animate-fade-in" data-testid="step-tokens">
+            <div className="flex items-center gap-2 mb-3 self-start">
               <button onClick={() => setStep(2)} className="text-[#7cbde8] font-bold text-sm hover:underline">&larr; Back</button>
               <span className="text-[#19305a]/30">/</span>
               <span className="font-bold text-[#19305a]">{selectedClass}</span>
@@ -245,21 +245,21 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
               <span className="font-bold text-[#7cbde8]">{selectedStudent}</span>
             </div>
             <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.1)] p-4 w-full max-w-md flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-bold text-[#5a6b8a] uppercase tracking-wider">Tokens Earned</h2>
-                <div className="flex gap-2">
+              <h2 className="text-sm font-bold text-[#5a6b8a] uppercase tracking-wider mb-1">Tokens Earned</h2>
+              <div className="flex items-center gap-3 mb-3">
+                <div data-testid="earned-display" className="flex-1 text-center text-5xl font-black text-[#19305a] min-h-[60px] flex items-center justify-center">
+                  {earnedBuffer || "0"}
+                </div>
+                <div className="flex flex-col gap-2">
                   <button data-testid="numpad-add-5" onClick={() => keypadAdd(5)}
-                    className="h-8 px-4 text-sm font-bold rounded-[8px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                    className="h-11 w-16 text-base font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
                     +5
                   </button>
                   <button data-testid="numpad-add-10" onClick={() => keypadAdd(10)}
-                    className="h-8 px-4 text-sm font-bold rounded-[8px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                    className="h-11 w-16 text-base font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
                     +10
                   </button>
                 </div>
-              </div>
-              <div data-testid="earned-display" className="text-center text-5xl font-black text-[#19305a] mb-3 min-h-[56px] flex items-center justify-center">
-                {earnedBuffer || "0"}
               </div>
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[1,2,3,4,5,6,7,8,9].map(d => (
