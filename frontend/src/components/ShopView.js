@@ -246,20 +246,8 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
             </div>
             <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.1)] p-4 w-full max-w-md flex flex-col">
               <h2 className="text-sm font-bold text-[#5a6b8a] uppercase tracking-wider mb-1">Tokens Earned</h2>
-              <div className="flex items-center gap-3 mb-3">
-                <div data-testid="earned-display" className="flex-1 text-center text-5xl font-black text-[#19305a] min-h-[60px] flex items-center justify-center">
-                  {earnedBuffer || "0"}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <button data-testid="numpad-add-5" onClick={() => keypadAdd(5)}
-                    className="h-11 w-16 text-base font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
-                    +5
-                  </button>
-                  <button data-testid="numpad-add-10" onClick={() => keypadAdd(10)}
-                    className="h-11 w-16 text-base font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
-                    +10
-                  </button>
-                </div>
+              <div data-testid="earned-display" className="text-center text-5xl font-black text-[#19305a] mb-3 min-h-[60px] flex items-center justify-center">
+                {earnedBuffer || "0"}
               </div>
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[1,2,3,4,5,6,7,8,9].map(d => (
@@ -279,6 +267,16 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
                 <button data-testid="numpad-btn-back" onClick={keypadBack}
                   className="h-12 rounded-[10px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#19305a]/10 active:scale-95 transition-all flex items-center justify-center">
                   <Delete size={20} strokeWidth={3} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <button data-testid="numpad-add-5" onClick={() => keypadAdd(5)}
+                  className="h-12 text-lg font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                  +5
+                </button>
+                <button data-testid="numpad-add-10" onClick={() => keypadAdd(10)}
+                  className="h-12 text-lg font-bold rounded-[10px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                  +10
                 </button>
               </div>
               <button data-testid="set-tokens-btn" onClick={keypadSet}
