@@ -153,7 +153,7 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
       <div className="flex-1 overflow-hidden flex">
         {/* Step 1 - Class */}
         {step === 1 && (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 animate-fade-in" data-testid="step-class">
+          <div className="flex-1 overflow-y-auto p-4 pt-6 sm:p-5 sm:pt-8 animate-fade-in" data-testid="step-class">
             <h2 className="text-lg font-black text-[#19305a] mb-4 tracking-tight">Select a Class</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {classes.map(cls => {
@@ -187,7 +187,7 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
 
         {/* Step 2 - Student */}
         {step === 2 && selectedClass && (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 animate-fade-in" data-testid="step-student">
+          <div className="flex-1 overflow-y-auto p-4 pt-6 sm:p-5 sm:pt-8 animate-fade-in" data-testid="step-student">
             <Breadcrumb items={[selectedClass]} onBack={() => setStep(1)} />
             <h2 className="text-lg font-black text-[#19305a] mb-4 tracking-tight">Select a Student</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
