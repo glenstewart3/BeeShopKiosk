@@ -83,6 +83,18 @@ async def seed_items():
         await db.items.insert_many(DEFAULT_ITEMS)
         logger.info("Seeded %d default items", len(DEFAULT_ITEMS))
 
+async def seed_session():
+    count = await db.sessions.count_documents({})
+    if count == 0:
+        doc = {
+            "label": "Session 1",
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "active": True
+        }
+        await db.sessions.insert_one(doc)
+        logger.info("Seeded default session")
+
 # ── Students ──
 
 @api_router.get("/students")
@@ -309,6 +321,7 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup():
     await seed_items()
+    await seed_session()
     logger.info("Bee Shop Kiosk API started")
 
 @app.on_event("shutdown")
