@@ -15,7 +15,7 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
-welltrack_db = client['welltrack_db']
+welltrack_db = client[os.environ.get('STUDENT_DB_NAME', 'welltrack_db')]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
