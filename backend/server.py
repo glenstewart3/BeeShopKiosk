@@ -41,6 +41,11 @@ class ItemIn(BaseModel):
     cost: int
     category: str = "Menu Item"
 
+class ItemUpdate(BaseModel):
+    name: Optional[str] = None
+    cost: Optional[int] = None
+    category: Optional[str] = None
+
 class SessionIn(BaseModel):
     label: str
 
@@ -155,6 +160,20 @@ async def create_item(item: ItemIn):
 async def delete_item(name: str):
     result = await db.items.delete_one({"name": name})
     if result.deleted_count == 0:
+        raise HTTPException(404, "Item not found")
+    return {"status": "ok"}
+
+@api_router.put("/items/{name}")
+async def update_item(name: str, body: ItemUpdate):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(400, "No fields to update")
+    if "name" in updates and updates["name"] != name:
+        existing = await db.items.find_one({"name": updates["name"]})
+        if existing:
+            raise HTTPException(400, "An item with that name already exists")
+    result = await db.items.update_one({"name": name}, {"$set": updates})
+    if result.matched_count == 0:
         raise HTTPException(404, "Item not found")
     return {"status": "ok"}
 
