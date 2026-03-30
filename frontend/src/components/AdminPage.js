@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import MpsLogo from "@/components/MpsLogo";
 import ImportModal from "@/components/ImportModal";
 
+axios.defaults.withCredentials = true;
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 

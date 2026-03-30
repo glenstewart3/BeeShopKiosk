@@ -9,6 +9,8 @@ import ShopView from "@/components/ShopView";
 import AdminPage from "@/components/AdminPage";
 import MpsLogo from "@/components/MpsLogo";
 
+axios.defaults.withCredentials = true;
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const BASE_PATH = process.env.REACT_APP_BASE_PATH || "";
@@ -19,17 +21,32 @@ function AuthGate({ children }) {
   const [authError, setAuthError] = useState(null);
   const exchanged = useRef(false);
 
+  const getRedirectUri = () => {
+    const origin = window.location.origin;
+    const base = BASE_PATH || '';
+    return (origin + base).replace(/\/$/, '');
+  };
+
   useEffect(() => {
     const init = async () => {
       const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get("session_id");
+      const code = params.get("code");
 
-      if (sessionId && !exchanged.current) {
+      if (code && !exchanged.current) {
         exchanged.current = true;
+        const redirectUri = getRedirectUri();
         window.history.replaceState({}, "", window.location.pathname);
         try {
-          const res = await axios.post(`${API}/auth/session`, { session_id: sessionId });
+          const res = await axios.post(`${API}/auth/google/callback`, { code, redirect_uri: redirectUri });
           setUser(res.data);
+          const savedPath = sessionStorage.getItem("auth_redirect");
+          if (savedPath) {
+            sessionStorage.removeItem("auth_redirect");
+            const fullPath = (BASE_PATH || '') + savedPath;
+            if (fullPath !== window.location.pathname) {
+              window.history.replaceState({}, "", fullPath);
+            }
+          }
           setLoading(false);
           return;
         } catch (e) {
@@ -59,9 +76,16 @@ function AuthGate({ children }) {
   if (loading) return <SplashScreen />;
 
   if (!user) {
-    const handleGoogleLogin = () => {
-      const redirectUrl = window.location.origin + BASE_PATH + window.location.pathname;
-      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    const handleGoogleLogin = async () => {
+      const currentPath = window.location.pathname.replace(BASE_PATH, '') || '/';
+      sessionStorage.setItem("auth_redirect", currentPath);
+      const redirectUri = getRedirectUri();
+      try {
+        const res = await axios.get(`${API}/auth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`);
+        window.location.href = res.data.auth_url;
+      } catch (e) {
+        setAuthError("Failed to start Google login");
+      }
     };
 
     return (
@@ -73,7 +97,14 @@ function AuthGate({ children }) {
             <h1 className="text-2xl font-black text-[#19305a]">Bee Shop Kiosk</h1>
             <p className="text-sm text-[#5a6b8a] mt-1">Sign in with your school Google account</p>
           </div>
-          {authError && <p data-testid="auth-error" className="text-[#c74747] text-sm font-bold text-center mb-4 bg-[#c74747]/5 rounded-[10px] p-3">{authError}</p>}
+          {authError && (
+            <div data-testid="auth-error" className="text-[#c74747] text-sm font-bold text-center mb-4 bg-[#c74747]/5 rounded-[10px] p-3">
+              <p>{authError}</p>
+              {authError.includes("not in the system") && (
+                <p className="text-xs font-medium text-[#5a6b8a] mt-2">Contact your administrator if you believe this is an error.</p>
+              )}
+            </div>
+          )}
           <button
             data-testid="google-login-btn"
             onClick={handleGoogleLogin}

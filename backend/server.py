@@ -4,9 +4,11 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
 import uuid
 import httpx
 from pathlib import Path
+from urllib.parse import quote
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
@@ -99,7 +101,10 @@ async def seed_session():
 
 # ── Auth ──
 
-EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
+GOOGLE_CLIENT_SECRET = os.environ['GOOGLE_CLIENT_SECRET']
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 async def get_current_admin(request: Request):
     token = request.cookies.get("session_token")
@@ -121,21 +126,59 @@ async def get_current_admin(request: Request):
         raise HTTPException(401, "Session expired")
     return session_doc
 
-@api_router.post("/auth/session")
-async def exchange_session(request: Request, response: Response):
+@api_router.get("/auth/google/login")
+async def google_login(request: Request):
+    redirect_uri = request.query_params.get("redirect_uri", "")
+    if not redirect_uri:
+        raise HTTPException(400, "Missing redirect_uri")
+    state = redirect_uri
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={quote(GOOGLE_CLIENT_ID, safe='')}"
+        f"&redirect_uri={quote(redirect_uri, safe='')}"
+        "&response_type=code"
+        "&scope=openid%20email%20profile"
+        f"&state={quote(state, safe='')}"
+        "&access_type=offline"
+        "&prompt=select_account"
+    )
+    return {"auth_url": google_auth_url}
+
+@api_router.post("/auth/google/callback")
+async def google_callback(request: Request, response: Response):
     body = await request.json()
-    session_id = body.get("session_id")
-    if not session_id:
-        raise HTTPException(400, "Missing session_id")
-    async with httpx.AsyncClient() as client_http:
-        resp = await client_http.get(EMERGENT_AUTH_URL, headers={"X-Session-ID": session_id})
-    if resp.status_code != 200:
-        raise HTTPException(401, "Invalid session from Google")
-    google_data = resp.json()
-    email = google_data.get("email", "").lower()
-    wt_user = await welltrack_db.users.find_one({"email": {"$regex": f"^{email}$", "$options": "i"}}, {"_id": 0})
+    code = body.get("code")
+    redirect_uri = body.get("redirect_uri")
+    if not code or not redirect_uri:
+        raise HTTPException(400, "Missing code or redirect_uri")
+
+    async with httpx.AsyncClient() as http:
+        token_resp = await http.post(GOOGLE_TOKEN_URL, data={
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        })
+    if token_resp.status_code != 200:
+        raise HTTPException(401, "Failed to exchange code with Google")
+    tokens = token_resp.json()
+    access_token = tokens.get("access_token")
+
+    async with httpx.AsyncClient() as http:
+        userinfo_resp = await http.get(GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"})
+    if userinfo_resp.status_code != 200:
+        raise HTTPException(401, "Failed to get user info from Google")
+    google_data = userinfo_resp.json()
+
+    email = google_data.get("email", "").lower().strip()
+    wt_user = await welltrack_db.users.find_one(
+        {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}},
+        {"_id": 0}
+    )
     if not wt_user:
         raise HTTPException(403, "Not authorised — your account is not in the system")
+
     session_token = f"admin_{uuid.uuid4().hex}"
     await db.admin_sessions.insert_one({
         "session_token": session_token,
@@ -146,7 +189,7 @@ async def exchange_session(request: Request, response: Response):
         "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     })
-    response.set_cookie("session_token", session_token, path="/", httponly=True, secure=True, samesite="none", max_age=7*24*60*60)
+    response.set_cookie("session_token", session_token, path="/", httponly=True, samesite="lax", max_age=7*24*60*60)
     return {"email": email, "name": google_data.get("name", ""), "picture": google_data.get("picture", ""), "role": wt_user.get("role", "staff")}
 
 @api_router.get("/auth/me")
