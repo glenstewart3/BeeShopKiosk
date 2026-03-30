@@ -153,21 +153,20 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
       <div className="flex-1 overflow-hidden flex">
         {/* Step 1 - Class */}
         {step === 1 && (
-          <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-5 animate-fade-in" data-testid="step-class">
-            <div className="w-full max-w-3xl">
+          <div className="flex-1 overflow-y-auto p-4 pt-6 sm:p-5 sm:pt-8 animate-fade-in" data-testid="step-class">
             <h2 className="text-lg font-black text-[#19305a] mb-4 tracking-tight">Select a Class</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {classes.map(cls => {
                 const rem = remainingStudents(cls).length;
                 return (
                   <button key={cls} data-testid={`class-btn-${cls}`} onClick={() => handleClassSelect(cls)} disabled={rem === 0}
-                    className={`relative min-h-[80px] rounded-[14px] font-black text-2xl transition-all duration-200 flex flex-col items-center justify-center gap-1.5 ${
+                    className={`relative min-h-[64px] rounded-[14px] font-black text-2xl transition-all duration-200 flex flex-col items-center justify-center gap-0.5 ${
                       rem === 0
                         ? "bg-[#19305a]/4 text-[#19305a]/20 cursor-not-allowed"
                         : "bg-white text-[#19305a] shadow-[0_4px_20px_rgba(25,48,90,0.07)] hover:shadow-[0_8px_32px_rgba(25,48,90,0.14)] hover:-translate-y-1 active:translate-y-0 active:shadow-[0_2px_8px_rgba(25,48,90,0.1)] border border-[#19305a]/6 hover:border-[#7cbde8]"
                     }`}>
                     {cls}
-                    <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${
                       rem === 0 ? "text-[#19305a]/20" : "bg-[#7cbde8]/12 text-[#7cbde8]"
                     }`}>
                       {rem} remaining
@@ -183,14 +182,12 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
                 <p className="text-sm text-[#5a6b8a]">Go to /admin to import students</p>
               </div>
             )}
-            </div>
           </div>
         )}
 
         {/* Step 2 - Student */}
         {step === 2 && selectedClass && (
-          <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-5 animate-fade-in" data-testid="step-student">
-            <div className="w-full max-w-3xl">
+          <div className="flex-1 overflow-y-auto p-4 pt-6 sm:p-5 sm:pt-8 animate-fade-in" data-testid="step-student">
             <Breadcrumb items={[selectedClass]} onBack={() => setStep(1)} />
             <h2 className="text-lg font-black text-[#19305a] mb-4 tracking-tight">Select a Student</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -202,7 +199,6 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
                   </button>
                 </div>
               ))}
-            </div>
             </div>
           </div>
         )}
