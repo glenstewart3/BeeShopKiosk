@@ -155,6 +155,16 @@ function AdminPanel() {
     } catch (e) { toast.error("Failed to delete session"); }
   };
 
+  const syncWellTrack = async () => {
+    try {
+      const res = await axios.post(`${API}/students/sync-welltrack`);
+      toast.success(`Synced ${res.data.count} students from WellTrack`);
+      loadAll();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to sync from WellTrack");
+    }
+  };
+
   const addItem = async () => {
     if (!newItem.name.trim() || !newItem.cost) { toast.error("Name and cost required"); return; }
     try {
@@ -416,12 +426,18 @@ function AdminPanel() {
         {/* ── STUDENTS TAB ── */}
         {tab === "students" && (
           <div className="animate-fade-in space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-xl font-bold text-[#19305a]">Students ({totalStudents})</h2>
-              <button data-testid="admin-import-btn" onClick={() => setShowImport(true)}
-                className="flex items-center gap-1 px-4 py-2 rounded-[12px] bg-[#7cbde8] text-[#19305a] font-bold text-sm hover:bg-[#7cbde8]/80 transition-all">
-                <Upload size={14} strokeWidth={3} /> Import Students
-              </button>
+              <div className="flex items-center gap-2">
+                <button data-testid="admin-sync-welltrack-btn" onClick={syncWellTrack}
+                  className="flex items-center gap-1 px-4 py-2 rounded-[12px] bg-[#19305a] text-white font-bold text-sm hover:bg-[#254680] transition-all">
+                  <RefreshCw size={14} strokeWidth={3} /> Sync from WellTrack
+                </button>
+                <button data-testid="admin-import-btn" onClick={() => setShowImport(true)}
+                  className="flex items-center gap-1 px-4 py-2 rounded-[12px] bg-[#7cbde8] text-[#19305a] font-bold text-sm hover:bg-[#7cbde8]/80 transition-all">
+                  <Upload size={14} strokeWidth={3} /> Import CSV
+                </button>
+              </div>
             </div>
             {Object.keys(students).length === 0 ? (
               <div className="text-center text-[#5a6b8a] mt-12">

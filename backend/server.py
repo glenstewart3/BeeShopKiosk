@@ -15,6 +15,7 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+welltrack_db = client['welltrack_db']
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -110,6 +111,30 @@ async def skip_student(body: SkipBody):
         {"$set": {"skipped_session": label}}
     )
     return {"status": "ok"}
+
+@api_router.post("/students/sync-welltrack")
+async def sync_welltrack():
+    cursor = welltrack_db.students.find(
+        {"enrolment_status": "active"},
+        {"_id": 0, "preferred_name": 1, "first_name": 1, "last_name": 1, "class_name": 1}
+    )
+    wt_docs = await cursor.to_list(5000)
+    if not wt_docs:
+        raise HTTPException(404, "No active students found in WellTrack database")
+
+    students = []
+    for d in wt_docs:
+        first = (d.get("preferred_name") or d.get("first_name") or "").strip()
+        last = (d.get("last_name") or "").strip()
+        name = f"{first} {last}".strip()
+        cls = (d.get("class_name") or "Unknown").strip()
+        if name and cls:
+            students.append({"class": cls, "student": name, "active": True})
+
+    await db.students.delete_many({})
+    if students:
+        await db.students.insert_many(students)
+    return {"status": "ok", "count": len(students)}
 
 # ── Items ──
 
