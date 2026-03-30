@@ -88,9 +88,11 @@ function KioskApp() {
   );
 }
 
+const BASE_PATH = process.env.REACT_APP_BASE_PATH || "";
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
       <Routes>
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<KioskApp />} />
