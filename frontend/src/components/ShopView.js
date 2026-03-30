@@ -205,10 +205,9 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
 
         {/* Step 3 - Tokens Numpad */}
         {step === 3 && (
-          <div className="flex-1 flex flex-col items-center p-3 pt-4 animate-fade-in" data-testid="step-tokens">
-            <div className="w-full max-w-md">
-              <Breadcrumb items={[selectedClass, selectedStudent]} onBack={() => setStep(2)} />
-            </div>
+          <div className="flex-1 flex flex-col p-4 pt-6 sm:p-5 sm:pt-8 animate-fade-in" data-testid="step-tokens">
+            <Breadcrumb items={[selectedClass, selectedStudent]} onBack={() => setStep(2)} />
+            <div className="flex-1 flex flex-col items-center">
             <div className="bg-white rounded-[16px] shadow-[0_4px_24px_rgba(25,48,90,0.08)] p-4 w-full max-w-md flex flex-col border border-[#19305a]/5">
               <h2 className="text-xs font-extrabold text-[#5a6b8a] uppercase tracking-[0.15em] mb-1">Tokens Earned</h2>
               <div data-testid="earned-display" className="text-center text-5xl font-black text-[#19305a] mb-3 min-h-[60px] flex items-center justify-center tabular-nums">
@@ -248,6 +247,7 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
                 className="w-full h-12 text-lg font-bold rounded-[12px] bg-[#f5a623] text-[#19305a] shadow-[0_4px_0_rgba(200,130,20,1)] hover:brightness-105 active:translate-y-1 active:shadow-none transition-all duration-150">
                 Set Tokens &rarr;
               </button>
+            </div>
             </div>
           </div>
         )}
