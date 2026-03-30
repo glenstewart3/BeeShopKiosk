@@ -156,9 +156,9 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
   return (
     <div className="h-full flex flex-col overflow-hidden" data-testid="shop-view">
       {/* Top bar */}
-      <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-[#19305a]/5 shrink-0">
+      <div className="px-3 py-2 flex items-center justify-between bg-white border-b border-[#19305a]/5 shrink-0">
         <StepIndicator step={step} />
-        <button data-testid="reset-btn" onClick={resetAll} className="flex items-center gap-1 px-3 py-2 rounded-[12px] bg-[#19305a]/5 text-[#19305a] font-bold text-sm hover:bg-[#19305a]/10 transition-all">
+        <button data-testid="reset-btn" onClick={resetAll} className="flex items-center gap-1 px-3 py-1.5 rounded-[12px] bg-[#19305a]/5 text-[#19305a] font-bold text-sm hover:bg-[#19305a]/10 transition-all">
           <RotateCcw size={14} strokeWidth={3} /> Reset
         </button>
       </div>
@@ -236,51 +236,53 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
 
         {/* Step 3 - Tokens Numpad */}
         {step === 3 && (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 animate-fade-in" data-testid="step-tokens">
-            <div className="flex items-center gap-2 mb-2 self-start">
+          <div className="flex-1 flex flex-col items-center justify-center p-3 animate-fade-in" data-testid="step-tokens">
+            <div className="flex items-center gap-2 mb-1 self-start">
               <button onClick={() => setStep(2)} className="text-[#7cbde8] font-bold text-sm hover:underline">&larr; Back</button>
               <span className="text-[#19305a]/30">/</span>
               <span className="font-bold text-[#19305a]">{selectedClass}</span>
               <span className="text-[#19305a]/30">/</span>
               <span className="font-bold text-[#7cbde8]">{selectedStudent}</span>
             </div>
-            <h2 className="text-xl font-bold text-[#19305a] mb-2">Tokens Earned</h2>
-            <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.1)] p-6 w-full max-w-sm">
-              <div data-testid="earned-display" className="text-center text-6xl font-black text-[#19305a] mb-6 min-h-[80px] flex items-center justify-center">
+            <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.1)] p-4 w-full max-w-md flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-bold text-[#5a6b8a] uppercase tracking-wider">Tokens Earned</h2>
+                <div className="flex gap-2">
+                  <button data-testid="numpad-add-5" onClick={() => keypadAdd(5)}
+                    className="h-8 px-4 text-sm font-bold rounded-[8px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                    +5
+                  </button>
+                  <button data-testid="numpad-add-10" onClick={() => keypadAdd(10)}
+                    className="h-8 px-4 text-sm font-bold rounded-[8px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
+                    +10
+                  </button>
+                </div>
+              </div>
+              <div data-testid="earned-display" className="text-center text-5xl font-black text-[#19305a] mb-3 min-h-[56px] flex items-center justify-center">
                 {earnedBuffer || "0"}
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 {[1,2,3,4,5,6,7,8,9].map(d => (
                   <button key={d} data-testid={`numpad-btn-${d}`} onClick={() => keypadInput(String(d))}
-                    className="h-16 text-2xl font-black rounded-[12px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all flex items-center justify-center">
+                    className="h-12 text-xl font-black rounded-[10px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all flex items-center justify-center">
                     {d}
                   </button>
                 ))}
                 <button data-testid="numpad-btn-clear" onClick={keypadClear}
-                  className="h-16 text-sm font-bold rounded-[12px] bg-[#c74747]/10 text-[#c74747] hover:bg-[#c74747] hover:text-white active:scale-95 transition-all">
+                  className="h-12 text-sm font-bold rounded-[10px] bg-[#c74747]/10 text-[#c74747] hover:bg-[#c74747] hover:text-white active:scale-95 transition-all">
                   Clear
                 </button>
                 <button data-testid="numpad-btn-0" onClick={() => keypadInput("0")}
-                  className="h-16 text-2xl font-black rounded-[12px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all flex items-center justify-center">
+                  className="h-12 text-xl font-black rounded-[10px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all flex items-center justify-center">
                   0
                 </button>
                 <button data-testid="numpad-btn-back" onClick={keypadBack}
-                  className="h-16 rounded-[12px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#19305a]/10 active:scale-95 transition-all flex items-center justify-center">
-                  <Delete size={22} strokeWidth={3} />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <button data-testid="numpad-add-5" onClick={() => keypadAdd(5)}
-                  className="h-12 text-lg font-bold rounded-[12px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
-                  +5
-                </button>
-                <button data-testid="numpad-add-10" onClick={() => keypadAdd(10)}
-                  className="h-12 text-lg font-bold rounded-[12px] bg-[#7cbde8]/10 text-[#7cbde8] hover:bg-[#7cbde8] hover:text-white active:scale-95 transition-all">
-                  +10
+                  className="h-12 rounded-[10px] bg-[#f3f6fb] text-[#19305a] hover:bg-[#19305a]/10 active:scale-95 transition-all flex items-center justify-center">
+                  <Delete size={20} strokeWidth={3} />
                 </button>
               </div>
               <button data-testid="set-tokens-btn" onClick={keypadSet}
-                className="w-full h-14 text-xl font-bold rounded-[16px] bg-[#f5a623] text-[#19305a] shadow-[0_6px_0_rgba(200,130,20,1)] hover:brightness-105 active:translate-y-1 active:shadow-none transition-all">
+                className="w-full h-12 text-lg font-bold rounded-[12px] bg-[#f5a623] text-[#19305a] shadow-[0_4px_0_rgba(200,130,20,1)] hover:brightness-105 active:translate-y-1 active:shadow-none transition-all">
                 Set Tokens &rarr;
               </button>
             </div>

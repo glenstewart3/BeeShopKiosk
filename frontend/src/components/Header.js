@@ -2,7 +2,7 @@ import MpsLogo from "@/components/MpsLogo";
 
 export default function Header({ activeSession }) {
   return (
-    <header data-testid="app-header" className="bg-[#19305a] text-white px-4 py-3 flex items-center justify-between shrink-0 shadow-lg" style={{ minHeight: 56 }}>
+    <header data-testid="app-header" className="bg-[#19305a] text-white px-4 py-2 flex items-center justify-between shrink-0 shadow-lg" style={{ minHeight: 48 }}>
       <div className="flex items-center gap-3">
         <MpsLogo className="h-8" fill="#fff" />
         <span className="text-lg font-bold tracking-tight hidden sm:inline">Bee Shop Kiosk</span>
