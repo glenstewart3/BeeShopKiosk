@@ -212,21 +212,13 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
             <h2 className="text-xl font-bold text-[#19305a] mb-4">Select a Student</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {remainingStudents(selectedClass).map(stu => (
-                <div key={stu} className="relative group">
+                <div key={stu} className="relative">
                   <button
                     data-testid={`student-btn-${stu.replace(/\s/g, '-')}`}
                     onClick={() => handleStudentSelect(stu)}
                     className="w-full min-h-[64px] rounded-[16px] bg-white text-[#19305a] font-bold text-base shadow-[0_8px_24px_rgba(25,48,90,0.08)] hover:shadow-[0_16px_32px_rgba(25,48,90,0.14)] hover:-translate-y-1 active:translate-y-0 transition-all border-2 border-transparent hover:border-[#7cbde8] px-2"
                   >
                     {stu}
-                  </button>
-                  <button
-                    data-testid={`skip-btn-${stu.replace(/\s/g, '-')}`}
-                    onClick={() => handleSkip(stu)}
-                    className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#c74747] text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                    title="Skip (Absent)"
-                  >
-                    <UserX size={14} strokeWidth={3} />
                   </button>
                 </div>
               ))}
