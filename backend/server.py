@@ -1,13 +1,15 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Request, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import uuid
+import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -94,6 +96,71 @@ async def seed_session():
         }
         await db.sessions.insert_one(doc)
         logger.info("Seeded default session")
+
+# ── Auth ──
+
+EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+
+async def get_current_admin(request: Request):
+    token = request.cookies.get("session_token")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if not token:
+        raise HTTPException(401, "Not authenticated")
+    session_doc = await db.admin_sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session_doc:
+        raise HTTPException(401, "Invalid session")
+    expires_at = session_doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(401, "Session expired")
+    return session_doc
+
+@api_router.post("/auth/session")
+async def exchange_session(request: Request, response: Response):
+    body = await request.json()
+    session_id = body.get("session_id")
+    if not session_id:
+        raise HTTPException(400, "Missing session_id")
+    async with httpx.AsyncClient() as client_http:
+        resp = await client_http.get(EMERGENT_AUTH_URL, headers={"X-Session-ID": session_id})
+    if resp.status_code != 200:
+        raise HTTPException(401, "Invalid session from Google")
+    google_data = resp.json()
+    email = google_data.get("email", "").lower()
+    wt_user = await welltrack_db.users.find_one({"email": {"$regex": f"^{email}$", "$options": "i"}}, {"_id": 0})
+    if not wt_user:
+        raise HTTPException(403, "Not authorised — your account is not in the system")
+    session_token = f"admin_{uuid.uuid4().hex}"
+    await db.admin_sessions.insert_one({
+        "session_token": session_token,
+        "email": email,
+        "name": google_data.get("name", ""),
+        "picture": google_data.get("picture", ""),
+        "role": wt_user.get("role", "staff"),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    response.set_cookie("session_token", session_token, path="/", httponly=True, secure=True, samesite="none", max_age=7*24*60*60)
+    return {"email": email, "name": google_data.get("name", ""), "picture": google_data.get("picture", ""), "role": wt_user.get("role", "staff")}
+
+@api_router.get("/auth/me")
+async def auth_me(request: Request):
+    session = await get_current_admin(request)
+    return {"email": session["email"], "name": session["name"], "picture": session.get("picture", ""), "role": session.get("role", "staff")}
+
+@api_router.post("/auth/logout")
+async def auth_logout(request: Request, response: Response):
+    token = request.cookies.get("session_token")
+    if token:
+        await db.admin_sessions.delete_one({"session_token": token})
+    response.delete_cookie("session_token", path="/")
+    return {"status": "ok"}
 
 # ── Students ──
 
@@ -212,6 +279,15 @@ async def create_session(body: SessionIn):
 async def get_active_session():
     doc = await db.sessions.find_one({"active": True}, {"_id": 0})
     return doc
+
+@api_router.put("/sessions/{label}/activate")
+async def activate_session(label: str):
+    existing = await db.sessions.find_one({"label": label})
+    if not existing:
+        raise HTTPException(404, "Session not found")
+    await db.sessions.update_many({}, {"$set": {"active": False}})
+    await db.sessions.update_one({"label": label}, {"$set": {"active": True}})
+    return {"status": "ok", "label": label}
 
 @api_router.delete("/sessions/{label}")
 async def delete_session(label: str):
