@@ -214,9 +214,12 @@ async def get_students():
     grouped = {}
     for d in docs:
         cls = d.get("class", "Unknown")
-        grouped.setdefault(cls, []).append(d["student"])
+        stu_obj = {"name": d["student"]}
+        if d.get("photo_url"):
+            stu_obj["photo_url"] = d["photo_url"]
+        grouped.setdefault(cls, []).append(stu_obj)
     for cls in grouped:
-        grouped[cls].sort()
+        grouped[cls].sort(key=lambda x: x["name"])
     return grouped
 
 @api_router.post("/students/import")
@@ -243,7 +246,7 @@ async def skip_student(body: SkipBody):
 async def sync_welltrack():
     cursor = welltrack_db.students.find(
         {"enrolment_status": "active"},
-        {"_id": 0, "preferred_name": 1, "first_name": 1, "last_name": 1, "class_name": 1}
+        {"_id": 0, "preferred_name": 1, "first_name": 1, "last_name": 1, "class_name": 1, "photo_url": 1}
     )
     wt_docs = await cursor.to_list(5000)
     if not wt_docs:
@@ -256,7 +259,10 @@ async def sync_welltrack():
         name = f"{first} {last}".strip()
         cls = (d.get("class_name") or "Unknown").strip()
         if name and cls:
-            students.append({"class": cls, "student": name, "active": True})
+            doc = {"class": cls, "student": name, "active": True}
+            if d.get("photo_url"):
+                doc["photo_url"] = d["photo_url"]
+            students.append(doc)
 
     await db.students.delete_many({})
     if students:
@@ -421,6 +427,31 @@ async def get_item_report(session: str = Query("all")):
 
     result = sorted(counts.values(), key=lambda x: x["count"], reverse=True)
     return result
+
+@api_router.get("/report/balances")
+async def get_student_balances():
+    """Cumulative saved tokens per student across all sessions."""
+    pipeline = [
+        {"$group": {
+            "_id": {"class": "$class", "student": "$student"},
+            "total_earned": {"$sum": "$earned"},
+            "total_spent": {"$sum": "$spent"},
+            "total_saved": {"$sum": "$saved"},
+            "sessions": {"$addToSet": "$session_label"},
+        }},
+        {"$sort": {"_id.class": 1, "_id.student": 1}},
+        {"$project": {
+            "_id": 0,
+            "class_name": "$_id.class",
+            "student": "$_id.student",
+            "total_earned": 1,
+            "total_spent": 1,
+            "total_saved": 1,
+            "session_count": {"$size": "$sessions"},
+        }}
+    ]
+    docs = await db.transactions.aggregate(pipeline).to_list(5000)
+    return docs
 
 # ── Include router ──
 

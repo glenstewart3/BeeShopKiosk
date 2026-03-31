@@ -30,19 +30,23 @@ function AdminPanel({ user, onLogout }) {
   const [newItem, setNewItem] = useState({ name: "", cost: "", category: "Menu Item" });
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", cost: "", category: "" });
+  const [balances, setBalances] = useState([]);
+  const [sessionDateFilter, setSessionDateFilter] = useState("");
 
   const loadAll = useCallback(async () => {
     try {
-      const [studRes, itemRes, sessRes, activeRes] = await Promise.all([
+      const [studRes, itemRes, sessRes, activeRes, balRes] = await Promise.all([
         axios.get(`${API}/students`),
         axios.get(`${API}/items`),
         axios.get(`${API}/sessions`),
         axios.get(`${API}/sessions/active`),
+        axios.get(`${API}/report/balances`),
       ]);
       setStudents(studRes.data);
       setItems(itemRes.data);
       setSessions(sessRes.data);
       setActiveSession(activeRes.data);
+      setBalances(balRes.data);
     } catch (e) {
       toast.error("Failed to load data");
     } finally {
@@ -70,6 +74,10 @@ function AdminPanel({ user, onLogout }) {
   const totalSpent = Object.values(report).reduce((s, c) => s + c.summary.total_spent, 0);
   const totalSaved = Object.values(report).reduce((s, c) => s + c.summary.total_saved, 0);
   const totalStudents = Object.values(students).reduce((s, arr) => s + arr.length, 0);
+  const totalStudentNames = Object.entries(students).reduce((acc, [cls, arr]) => {
+    arr.forEach(s => acc.push(typeof s === 'string' ? s : s.name));
+    return acc;
+  }, []);
 
   const classChartData = Object.entries(report).map(([cls, d]) => ({
     name: cls, earned: d.summary.total_earned, spent: d.summary.total_spent, saved: d.summary.total_saved
@@ -397,6 +405,39 @@ function AdminPanel({ user, onLogout }) {
                 </div>
               </div>
             )}
+
+            {/* Token Balances - cumulative savings */}
+            {balances.length > 0 && (
+              <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.06)] p-4 sm:p-6">
+                <h3 className="font-bold text-[#19305a] mb-4 text-sm">Cumulative Token Balances (All Sessions)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="admin-balances-table">
+                    <thead>
+                      <tr className="text-xs font-bold text-[#5a6b8a] uppercase border-b border-[#19305a]/5">
+                        <th className="text-left py-2 pr-3">Class</th>
+                        <th className="text-left py-2 pr-3">Student</th>
+                        <th className="text-right py-2 pr-3">Earned</th>
+                        <th className="text-right py-2 pr-3">Spent</th>
+                        <th className="text-right py-2 pr-3">Saved</th>
+                        <th className="text-right py-2">Sessions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {balances.map((b, i) => (
+                        <tr key={i} className="border-b border-[#19305a]/3 last:border-0">
+                          <td className="py-2 pr-3 font-bold text-[#19305a]">{b.class_name}</td>
+                          <td className="py-2 pr-3 text-[#19305a]">{b.student}</td>
+                          <td className="py-2 pr-3 text-right font-bold text-[#7cbde8]">{b.total_earned}</td>
+                          <td className="py-2 pr-3 text-right font-bold text-[#c74747]">{b.total_spent}</td>
+                          <td className={`py-2 pr-3 text-right font-bold ${b.total_saved > 0 ? "text-[#f5a623]" : "text-[#5a6b8a]"}`}>{b.total_saved}</td>
+                          <td className="py-2 text-right text-[#5a6b8a]">{b.session_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -431,9 +472,18 @@ function AdminPanel({ user, onLogout }) {
                       <span className="font-bold text-[#19305a]">{stuList.length} students</span>
                     </div>
                     <div className="space-y-1">
-                      {stuList.map(s => (
-                        <div key={s} className="px-3 py-1.5 rounded-[8px] bg-[#f3f6fb] text-sm font-medium text-[#19305a]">{s}</div>
-                      ))}
+                      {stuList.map(s => {
+                        const name = typeof s === 'string' ? s : s.name;
+                        const photo = typeof s === 'string' ? null : s.photo_url;
+                        return (
+                          <div key={name} className="px-3 py-1.5 rounded-[8px] bg-[#f3f6fb] text-sm font-medium text-[#19305a] flex items-center gap-2">
+                            {photo ? (
+                              <img src={photo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                            ) : null}
+                            {name}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -540,12 +590,25 @@ function AdminPanel({ user, onLogout }) {
         {/* ── SESSIONS TAB ── */}
         {tab === "sessions" && (
           <div className="animate-fade-in space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-xl font-bold text-[#19305a]">Sessions</h2>
-              <button data-testid="admin-new-session-btn" onClick={() => setShowNewSession(!showNewSession)}
-                className="flex items-center gap-1 px-4 py-2 rounded-[12px] bg-[#19305a] text-white font-bold text-sm hover:bg-[#254680] transition-all">
-                <Plus size={14} strokeWidth={3} /> New Session
-              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  data-testid="admin-session-date-filter"
+                  value={sessionDateFilter}
+                  onChange={e => setSessionDateFilter(e.target.value)}
+                  className="px-3 py-2 rounded-[12px] border-2 border-[#19305a]/10 bg-white text-[#19305a] font-bold text-sm focus:border-[#7cbde8] outline-none"
+                  placeholder="Filter by date"
+                />
+                {sessionDateFilter && (
+                  <button onClick={() => setSessionDateFilter("")} className="text-xs font-bold text-[#c74747] hover:underline">Clear</button>
+                )}
+                <button data-testid="admin-new-session-btn" onClick={() => setShowNewSession(!showNewSession)}
+                  className="flex items-center gap-1 px-4 py-2 rounded-[12px] bg-[#19305a] text-white font-bold text-sm hover:bg-[#254680] transition-all">
+                  <Plus size={14} strokeWidth={3} /> New Session
+                </button>
+              </div>
             </div>
 
             {showNewSession && (
@@ -571,7 +634,7 @@ function AdminPanel({ user, onLogout }) {
             )}
 
             <div className="space-y-2">
-              {sessions.map(s => (
+              {sessions.filter(s => !sessionDateFilter || s.date === sessionDateFilter).map(s => (
                 <div key={s.label} className={`bg-white rounded-[16px] shadow-[0_8px_24px_rgba(25,48,90,0.06)] p-4 flex items-center justify-between ${s.active ? "ring-2 ring-[#f5a623]" : ""}`}>
                   <div>
                     <span className="font-bold text-[#19305a]">{s.label}</span>
@@ -593,7 +656,11 @@ function AdminPanel({ user, onLogout }) {
                   </div>
                 </div>
               ))}
-              {sessions.length === 0 && <p className="text-center text-[#5a6b8a] mt-8">No sessions yet. Create one above.</p>}
+              {sessions.filter(s => !sessionDateFilter || s.date === sessionDateFilter).length === 0 && (
+                <p className="text-center text-[#5a6b8a] mt-8">
+                  {sessionDateFilter ? "No sessions found for this date" : "No sessions yet. Create one above."}
+                </p>
+              )}
             </div>
           </div>
         )}

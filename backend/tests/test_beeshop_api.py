@@ -205,20 +205,26 @@ class TestSessionsEndpoints:
 
 
 class TestStudentsEndpoints:
-    """Student data tests"""
+    """Student data tests - students now return as objects {name, photo_url?}"""
     
-    def test_get_students_returns_grouped_data(self, api_client):
-        """GET /api/students should return students grouped by class"""
+    def test_get_students_returns_grouped_data_with_objects(self, api_client):
+        """GET /api/students should return students grouped by class as objects with 'name' field"""
         response = api_client.get(f"{BASE_URL}/api/students")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, dict)
-        # Each key is a class, value is list of student names
+        # Each key is a class, value is list of student objects
         for class_name, students in data.items():
             assert isinstance(students, list)
             for student in students:
-                assert isinstance(student, str)
-        print(f"✓ /api/students returns {len(data)} classes")
+                # NEW: Students are now objects with 'name' field (not plain strings)
+                assert isinstance(student, dict), f"Student should be object, got {type(student)}"
+                assert "name" in student, "Student object must have 'name' field"
+                assert isinstance(student["name"], str), "Student name must be string"
+                # photo_url is optional
+                if "photo_url" in student:
+                    assert isinstance(student["photo_url"], str)
+        print(f"✓ /api/students returns {len(data)} classes with student objects (name field)")
 
 
 class TestReportEndpoints:
@@ -252,6 +258,47 @@ class TestReportEndpoints:
             assert "count" in item
             assert "total_cost" in item
         print(f"✓ /api/report/items returns {len(data)} items in popularity order")
+    
+    def test_get_student_balances(self, api_client):
+        """GET /api/report/balances should return cumulative balance data per student"""
+        response = api_client.get(f"{BASE_URL}/api/report/balances")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            balance = data[0]
+            # Verify balance structure
+            assert "class_name" in balance, "Balance must have class_name"
+            assert "student" in balance, "Balance must have student"
+            assert "total_earned" in balance, "Balance must have total_earned"
+            assert "total_spent" in balance, "Balance must have total_spent"
+            assert "total_saved" in balance, "Balance must have total_saved"
+            assert "session_count" in balance, "Balance must have session_count"
+            # Verify types
+            assert isinstance(balance["total_earned"], int)
+            assert isinstance(balance["total_spent"], int)
+            assert isinstance(balance["total_saved"], int)
+            assert isinstance(balance["session_count"], int)
+        print(f"✓ /api/report/balances returns {len(data)} student balances")
+
+
+class TestSessionsDateField:
+    """Test that sessions have date field for filtering"""
+    
+    def test_sessions_have_date_field(self, api_client):
+        """GET /api/sessions should return sessions with date field"""
+        response = api_client.get(f"{BASE_URL}/api/sessions")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            session = data[0]
+            assert "date" in session, "Session must have date field"
+            # Date should be in YYYY-MM-DD format
+            date_str = session["date"]
+            assert len(date_str) == 10, f"Date should be YYYY-MM-DD format, got {date_str}"
+            assert date_str[4] == "-" and date_str[7] == "-", f"Date format invalid: {date_str}"
+        print(f"✓ /api/sessions returns sessions with date field")
 
 
 if __name__ == "__main__":

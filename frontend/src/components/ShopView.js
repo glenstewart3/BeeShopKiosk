@@ -74,7 +74,10 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
   }, [students]);
 
   const remainingStudents = useCallback((cls) => {
-    return (students[cls] || []).filter(s => !usedSet.has(`${cls}|${s}`));
+    return (students[cls] || []).filter(s => {
+      const name = typeof s === 'string' ? s : s.name;
+      return !usedSet.has(`${cls}|${name}`);
+    });
   }, [students, usedSet]);
 
   const spent = useMemo(() => cart.reduce((sum, i) => sum + i.cost, 0), [cart]);
@@ -97,7 +100,10 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
   };
 
   const handleClassSelect = (cls) => { setSelectedClass(cls); setStep(2); };
-  const handleStudentSelect = (stu) => { setSelectedStudent(stu); setEarnedBuffer(""); setEarned(0); setCart([]); setStep(3); };
+  const handleStudentSelect = (stu) => {
+    const name = typeof stu === 'string' ? stu : stu.name;
+    setSelectedStudent(name); setEarnedBuffer(""); setEarned(0); setCart([]); setStep(3);
+  };
 
   const keypadInput = (digit) => { if (earnedBuffer.length < 3) setEarnedBuffer(prev => prev + digit); };
   const keypadBack = () => setEarnedBuffer(prev => prev.slice(0, -1));
@@ -160,7 +166,7 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
                 const rem = remainingStudents(cls).length;
                 return (
                   <button key={cls} data-testid={`class-btn-${cls}`} onClick={() => handleClassSelect(cls)} disabled={rem === 0}
-                    className={`relative min-h-[80px] rounded-[14px] font-black text-3xl transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
+                    className={`relative rounded-[14px] font-black text-3xl py-4 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
                       rem === 0
                         ? "bg-[#19305a]/4 text-[#19305a]/20 cursor-not-allowed"
                         : "bg-white text-[#19305a] shadow-[0_4px_20px_rgba(25,48,90,0.07)] hover:shadow-[0_8px_32px_rgba(25,48,90,0.14)] hover:-translate-y-1 active:translate-y-0 active:shadow-[0_2px_8px_rgba(25,48,90,0.1)] border border-[#19305a]/6 hover:border-[#7cbde8]"
@@ -191,14 +197,26 @@ export default function ShopView({ students, items, activeSession, usedPairs, on
             <Breadcrumb items={[selectedClass]} onBack={() => setStep(1)} />
             <h2 className="text-base font-black text-[#19305a] mb-3 tracking-tight">Select a Student</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {remainingStudents(selectedClass).map(stu => (
-                <div key={stu} className="relative">
-                  <button data-testid={`student-btn-${stu.replace(/\s/g, '-')}`} onClick={() => handleStudentSelect(stu)}
-                    className="w-full min-h-[72px] rounded-[14px] bg-white text-[#19305a] font-bold text-base shadow-[0_4px_20px_rgba(25,48,90,0.07)] hover:shadow-[0_8px_32px_rgba(25,48,90,0.14)] hover:-translate-y-1 active:translate-y-0 transition-all duration-200 border border-[#19305a]/6 hover:border-[#7cbde8] px-3">
-                    {stu}
-                  </button>
-                </div>
-              ))}
+              {remainingStudents(selectedClass).map(stu => {
+                const name = typeof stu === 'string' ? stu : stu.name;
+                const photo = typeof stu === 'string' ? null : stu.photo_url;
+                const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                return (
+                  <div key={name} className="relative">
+                    <button data-testid={`student-btn-${name.replace(/\s/g, '-')}`} onClick={() => handleStudentSelect(stu)}
+                      className="w-full min-h-[72px] rounded-[14px] bg-white text-[#19305a] font-bold text-base shadow-[0_4px_20px_rgba(25,48,90,0.07)] hover:shadow-[0_8px_32px_rgba(25,48,90,0.14)] hover:-translate-y-1 active:translate-y-0 transition-all duration-200 border border-[#19305a]/6 hover:border-[#7cbde8] px-3 flex items-center gap-3">
+                      {photo ? (
+                        <img src={photo} alt="" className="w-10 h-10 rounded-full object-cover shrink-0 border-2 border-[#7cbde8]/20" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#19305a]/8 flex items-center justify-center text-sm font-black text-[#19305a]/40 shrink-0">
+                          {initials}
+                        </div>
+                      )}
+                      <span className="truncate">{name}</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
