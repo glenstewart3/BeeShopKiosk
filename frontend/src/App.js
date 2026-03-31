@@ -84,7 +84,15 @@ function AuthGate({ children }) {
         const res = await axios.get(`${API}/auth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`);
         window.location.href = res.data.auth_url;
       } catch (e) {
-        setAuthError("Failed to start Google login");
+        const status = e.response?.status;
+        const detail = e.response?.data?.detail;
+        if (status === 502 || status === 503) {
+          setAuthError("Cannot reach the server — is the backend running?");
+        } else if (detail) {
+          setAuthError(detail);
+        } else {
+          setAuthError("Failed to start Google login — check server connection");
+        }
       }
     };
 
