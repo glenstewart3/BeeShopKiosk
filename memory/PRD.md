@@ -15,7 +15,7 @@ Rebuild the MPS Bee Shop Kiosk as a web app. A teacher-run iPad kiosk where stud
 2. **Student**: Uses kiosk to select class, enter tokens, shop for items (guided by teacher)
 
 ## Core Requirements
-- 4-step shop flow: Class → Student → Tokens → Shop
+- 4-step shop flow: Class -> Student -> Tokens -> Shop
 - Session-based transaction tracking
 - Dashboard with analytics and CSV export
 - Student sync from WellTrack database
@@ -43,6 +43,8 @@ Rebuild the MPS Bee Shop Kiosk as a web app. A teacher-run iPad kiosk where stud
 - [x] Regex-safe email lookup in welltrack_db
 - [x] URL-encoded OAuth parameters
 - [x] Improved auth error UX for unauthorized users
+- [x] iPad-optimized button sizes (classes, students, items all enlarged)
+- [x] Compact layout to eliminate scrolling on iPad (numpad, cart, save button all fit viewport)
 
 ## Key API Endpoints
 - `GET /api/auth/google/login` - Returns Google OAuth URL
@@ -57,6 +59,12 @@ Rebuild the MPS Bee Shop Kiosk as a web app. A teacher-run iPad kiosk where stud
 - `PUT /api/sessions/{label}/activate` - Activate session
 - `POST /api/transactions` - Record purchase
 - `GET /api/report` / `GET /api/report/items` - Analytics
+
+## Production Deployment Notes
+- Nginx config needs `/beeshopkiosk/api/` proxying to `http://127.0.0.1:8001/api/`
+- Frontend `.env` needs `REACT_APP_BASE_PATH=/beeshopkiosk`
+- Google Console redirect URI: `http://apps.mps.edu.vic.gov.au/beeshopkiosk`
+- Backend venv needs `httpx` installed for OAuth
 
 ## Prioritized Backlog
 ### P1 (Should Have)
