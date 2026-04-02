@@ -209,10 +209,34 @@ async def auth_logout(request: Request, response: Response):
 
 @api_router.get("/students")
 async def get_students():
-    cursor = db.students.find({"active": True}, {"_id": 0})
-    docs = await cursor.to_list(5000)
+    """Read students directly from welltrack_db. Falls back to local beeshopkiosk_db.students if welltrack has none."""
+    cursor = welltrack_db.students.find(
+        {"enrolment_status": "active"},
+        {"_id": 0, "preferred_name": 1, "first_name": 1, "last_name": 1, "class_name": 1, "photo_url": 1}
+    )
+    wt_docs = await cursor.to_list(5000)
+
+    if wt_docs:
+        grouped = {}
+        for d in wt_docs:
+            first = (d.get("preferred_name") or d.get("first_name") or "").strip()
+            last = (d.get("last_name") or "").strip()
+            name = f"{first} {last}".strip()
+            cls = (d.get("class_name") or "Unknown").strip()
+            if name and cls:
+                stu_obj = {"name": name}
+                if d.get("photo_url"):
+                    stu_obj["photo_url"] = d["photo_url"]
+                grouped.setdefault(cls, []).append(stu_obj)
+        for cls in grouped:
+            grouped[cls].sort(key=lambda x: x["name"])
+        return grouped
+
+    # Fallback: read from local beeshopkiosk_db.students (for CSV-imported data)
+    local_cursor = db.students.find({"active": True}, {"_id": 0})
+    local_docs = await local_cursor.to_list(5000)
     grouped = {}
-    for d in docs:
+    for d in local_docs:
         cls = d.get("class", "Unknown")
         stu_obj = {"name": d["student"]}
         if d.get("photo_url"):
@@ -236,38 +260,12 @@ async def skip_student(body: SkipBody):
     if not active:
         raise HTTPException(400, "No active session")
     label = active["label"]
-    await db.students.update_one(
-        {"class": body.class_name, "student": body.student},
-        {"$set": {"skipped_session": label}}
+    await db.skipped_students.update_one(
+        {"class": body.class_name, "student": body.student, "session_label": label},
+        {"$set": {"class": body.class_name, "student": body.student, "session_label": label}},
+        upsert=True
     )
     return {"status": "ok"}
-
-@api_router.post("/students/sync-welltrack")
-async def sync_welltrack():
-    cursor = welltrack_db.students.find(
-        {"enrolment_status": "active"},
-        {"_id": 0, "preferred_name": 1, "first_name": 1, "last_name": 1, "class_name": 1, "photo_url": 1}
-    )
-    wt_docs = await cursor.to_list(5000)
-    if not wt_docs:
-        raise HTTPException(404, "No active students found in WellTrack database")
-
-    students = []
-    for d in wt_docs:
-        first = (d.get("preferred_name") or d.get("first_name") or "").strip()
-        last = (d.get("last_name") or "").strip()
-        name = f"{first} {last}".strip()
-        cls = (d.get("class_name") or "Unknown").strip()
-        if name and cls:
-            doc = {"class": cls, "student": name, "active": True}
-            if d.get("photo_url"):
-                doc["photo_url"] = d["photo_url"]
-            students.append(doc)
-
-    await db.students.delete_many({})
-    if students:
-        await db.students.insert_many(students)
-    return {"status": "ok", "count": len(students)}
 
 # ── Items ──
 
@@ -344,7 +342,7 @@ async def delete_session(label: str):
     if result.deleted_count == 0:
         raise HTTPException(404, "Session not found")
     await db.transactions.delete_many({"session_label": label})
-    await db.students.update_many({"skipped_session": label}, {"$unset": {"skipped_session": ""}})
+    await db.skipped_students.delete_many({"session_label": label})
     return {"status": "ok"}
 
 # ── Transactions ──
@@ -373,8 +371,8 @@ async def get_used(session: str = Query(...)):
         {"$project": {"_id": 0, "class": 1, "student": 1}}
     ]
     docs = await db.transactions.aggregate(pipeline).to_list(5000)
-    skipped = await db.students.find(
-        {"skipped_session": session},
+    skipped = await db.skipped_students.find(
+        {"session_label": session},
         {"_id": 0, "class": 1, "student": 1}
     ).to_list(5000)
     all_used = docs + skipped
